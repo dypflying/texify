@@ -59,6 +59,18 @@ def load_images(source_data):
     return images
 
 
+def get_references(source_data): 
+    images = load_images(source_data)
+
+    write_data = []
+    for i in tqdm(range(0, len(images), settings.BATCH_SIZE), desc=""):
+        batch = images[i:i+settings.BATCH_SIZE]
+        for j in enumerate(batch):
+            eq_idx = i + j
+            write_data.append(normalize_text(source_data[eq_idx]["equation"]))
+
+    return write_data
+
 def inference_texify(source_data, model, processor):
     images = load_images(source_data)
 
@@ -165,8 +177,7 @@ def main():
     source_path = os.path.abspath(args.data_path)
     result_path = os.path.abspath(args.result_path)
     os.makedirs(os.path.dirname(result_path), exist_ok=True)
-    model = load_model()
-    processor = load_processor()
+
 
     with open(source_path, "r") as f:
         source_data = json.load(f)
@@ -176,12 +187,16 @@ def main():
         source_data = random.sample(source_data, args.max)
 
     times = {}
+    references = get_references(source_data) 
+    
     if args.texify:
+        model = load_model()
+        processor = load_processor()
         start = time.time()
         predictions = inference_texify(source_data, model, processor)
         times = {"texify": time.time() - start}
         text = [normalize_text(p["text"]) for p in predictions]
-        references = [normalize_text(p["equation"]) for p in predictions]
+        #references = [normalize_text(p["equation"]) for p in predictions]
 
         scores = score_text(text, references)
 
