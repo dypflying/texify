@@ -175,6 +175,7 @@ def main():
         random.seed(1)
         source_data = random.sample(source_data, args.max)
 
+    times = {}
     if args.texify:
         start = time.time()
         predictions = inference_texify(source_data, model, processor)
