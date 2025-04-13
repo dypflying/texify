@@ -188,7 +188,8 @@ def main():
 
     times = {}
     references = get_references(source_data) 
-
+    write_data = {}
+    
     if args.texify:
         model = load_model()
         processor = load_processor()
