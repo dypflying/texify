@@ -89,6 +89,22 @@ def inference_pix2tex(source_data):
 
     return write_data
 
+def inference_easylatex(source_data):
+    from pix2tex.cli import LatexOCR
+    model = LatexOCR()
+
+    images = load_images(source_data)
+    write_data = []
+    for i in tqdm(range(len(images)), desc="Pix2tex inference"):
+        try:
+            text = model(images[i])
+        except ValueError:
+            # Happens when resize fails
+            text = ""
+        write_data.append({"text": text, "equation": source_data[i]["equation"]})
+
+    return write_data
+
 
 def image_to_bmp(image):
     img_out = io.BytesIO()
@@ -143,6 +159,7 @@ def main():
     parser.add_argument("--max", type=int, help="Maximum number of images to benchmark.", default=None)
     parser.add_argument("--pix2tex", action="store_true", help="Run pix2tex scoring", default=False)
     parser.add_argument("--nougat", action="store_true", help="Run nougat scoring", default=False)
+    parser.add_argument("--texify", action="store_true", help="Run texify scoring", default=False)
     args = parser.parse_args()
 
     source_path = os.path.abspath(args.data_path)
@@ -158,20 +175,21 @@ def main():
         random.seed(1)
         source_data = random.sample(source_data, args.max)
 
-    start = time.time()
-    predictions = inference_texify(source_data, model, processor)
-    times = {"texify": time.time() - start}
-    text = [normalize_text(p["text"]) for p in predictions]
-    references = [normalize_text(p["equation"]) for p in predictions]
+    if args.texify:
+        start = time.time()
+        predictions = inference_texify(source_data, model, processor)
+        times = {"texify": time.time() - start}
+        text = [normalize_text(p["text"]) for p in predictions]
+        references = [normalize_text(p["equation"]) for p in predictions]
 
-    scores = score_text(text, references)
+        scores = score_text(text, references)
 
-    write_data = {
-        "texify": {
-            "scores": scores,
-            "text": [{"prediction": p, "reference": r} for p, r in zip(text, references)]
+        write_data = {
+            "texify": {
+                "scores": scores,
+                "text": [{"prediction": p, "reference": r} for p, r in zip(text, references)]
+            }
         }
-    }
 
     if args.pix2tex:
         start = time.time()
