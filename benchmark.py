@@ -65,7 +65,7 @@ def get_references(source_data):
     write_data = []
     for i in tqdm(range(0, len(images), settings.BATCH_SIZE), desc=""):
         batch = images[i:i+settings.BATCH_SIZE]
-        for j in enumerate(batch):
+        for j, _ in enumerate(batch):
             eq_idx = i + j
             write_data.append(normalize_text(source_data[eq_idx]["equation"]))
 
@@ -188,7 +188,7 @@ def main():
 
     times = {}
     references = get_references(source_data) 
-    
+
     if args.texify:
         model = load_model()
         processor = load_processor()
